@@ -9,6 +9,7 @@
 #include <uhid/protected_types.hpp>
 #include <uhid/ps5.hpp>
 #include <uhid/uhid.hpp>
+#include <climits>
 
 namespace inputtino {
 
@@ -361,11 +362,12 @@ void PS5Joypad::set_on_rumble(const std::function<void(int, int)> &callback) {
 }
 
 static __le16 to_le_signed(float original, float value) {
-  auto le = htole16(value);
-  if (original < 0) { // adjust sign bit
-    le |= (1 << 15);  // set the last bit (bit 15) to 1
+  if (value < SHRT_MIN) {
+    value = SHRT_MIN;
+  } else if (value > SHRT_MAX) {
+    value = SHRT_MAX;
   }
-  return le;
+  return htole16(value);
 }
 
 void PS5Joypad::set_motion(PS5Joypad::MOTION_TYPE type, float x, float y, float z) {
