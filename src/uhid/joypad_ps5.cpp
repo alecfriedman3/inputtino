@@ -360,28 +360,20 @@ void PS5Joypad::set_on_rumble(const std::function<void(int, int)> &callback) {
   this->_state->on_rumble = callback;
 }
 
-static __le16 to_le_signed(float original, float value) {
-  auto le = htole16(value);
-  if (original < 0) { // adjust sign bit
-    le |= (1 << 15);  // set the last bit (bit 15) to 1
-  }
-  return le;
-}
-
 void PS5Joypad::set_motion(PS5Joypad::MOTION_TYPE type, float x, float y, float z) {
   switch (type) {
   case ACCELERATION: {
-    this->_state->current_state.accel[0] = to_le_signed(x, (x * uhid::SDL_STANDARD_GRAVITY * 100));
-    this->_state->current_state.accel[1] = to_le_signed(y, (y * uhid::SDL_STANDARD_GRAVITY * 100));
-    this->_state->current_state.accel[2] = to_le_signed(z, (z * uhid::SDL_STANDARD_GRAVITY * 100));
+    this->_state->current_state.accel[0] = static_cast<__le16>((x * uhid::SDL_STANDARD_GRAVITY * 100));
+    this->_state->current_state.accel[1] = static_cast<__le16>((y * uhid::SDL_STANDARD_GRAVITY * 100));
+    this->_state->current_state.accel[2] = static_cast<__le16>((z * uhid::SDL_STANDARD_GRAVITY * 100));
 
     send_report(*this->_state);
     break;
   }
   case GYROSCOPE: {
-    this->_state->current_state.gyro[0] = to_le_signed(x, x * uhid::gyro_resolution);
-    this->_state->current_state.gyro[1] = to_le_signed(y, y * uhid::gyro_resolution);
-    this->_state->current_state.gyro[2] = to_le_signed(z, z * uhid::gyro_resolution);
+    this->_state->current_state.gyro[0] = static_cast<__le16>(x * uhid::gyro_resolution);
+    this->_state->current_state.gyro[1] = static_cast<__le16>(y * uhid::gyro_resolution);
+    this->_state->current_state.gyro[2] = static_cast<__le16>(z * uhid::gyro_resolution);
 
     send_report(*this->_state);
     break;
