@@ -361,6 +361,9 @@ void PS5Joypad::set_on_rumble(const std::function<void(int, int)> &callback) {
   this->_state->on_rumble = callback;
 }
 
+/**
+ * For a rationale behind this, see: https://github.com/LizardByte/Sunshine/issues/3247#issuecomment-2428065349
+ */
 static __le16 to_le_signed(float original, float value) {
   if (value < SHRT_MIN) {
     value = SHRT_MIN;

@@ -131,7 +131,7 @@ TEST_CASE_METHOD(SDLTestsFixture, "PS Joypad", "[SDL]") {
   // Create the controller
   auto joypad = std::move(*PS5Joypad::create());
 
-  std::this_thread::sleep_for(250ms);
+  std::this_thread::sleep_for(50ms);
 
   auto devices = joypad.get_nodes();
   REQUIRE_THAT(devices, SizeIs(5)); // 3 eventXX and 2 jsYY
@@ -154,7 +154,7 @@ TEST_CASE_METHOD(SDLTestsFixture, "PS Joypad", "[SDL]") {
   { // Test creating a second device
     REQUIRE(SDL_NumJoysticks() == 1);
     auto joypad2 = std::move(*PS5Joypad::create());
-    std::this_thread::sleep_for(250ms);
+    std::this_thread::sleep_for(50ms);
 
     auto devices2 = joypad2.get_nodes();
     REQUIRE_THAT(devices2, SizeIs(5)); // 3 eventXX and 2 jsYY
@@ -336,6 +336,26 @@ TEST_CASE_METHOD(SDLTestsFixture, "PS Joypad", "[SDL]") {
     REQUIRE_THAT(event.csensor.data[0], WithinAbs(gyro_data[0], 0.01f));
     REQUIRE_THAT(event.csensor.data[1], WithinAbs(gyro_data[1], 0.01f));
     REQUIRE_THAT(event.csensor.data[2], WithinAbs(gyro_data[2], 0.01f));
+    flush_sdl_events();
+
+    // Try out problematic values from https://github.com/LizardByte/Sunshine/issues/3247
+    gyro_data = {-32769.0f, 32769.0f, -0.0004124999977648258f};
+    joypad.set_motion(inputtino::PS5Joypad::GYROSCOPE, gyro_data[0], gyro_data[1], gyro_data[2]);
+    std::this_thread::sleep_for(10ms);
+
+    SDL_GameControllerUpdate();
+    SDL_SensorUpdate();
+    while (SDL_PollEvent(&event) != 0) {
+      if (event.type == SDL_CONTROLLERSENSORUPDATE) {
+        break;
+      }
+    }
+    REQUIRE(event.type == SDL_CONTROLLERSENSORUPDATE);
+    REQUIRE(event.csensor.sensor == SDL_SENSOR_GYRO);
+    REQUIRE_THAT(event.csensor.data[0], WithinAbs(-28.59546f, 0.01f));
+    REQUIRE_THAT(event.csensor.data[1], WithinAbs(28.59546f, 0.01f));
+    REQUIRE_THAT(event.csensor.data[2], WithinAbs(0.0f, 0.01f));
+    flush_sdl_events();
   }
 
   { // Test touchpad
